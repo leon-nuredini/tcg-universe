@@ -4,7 +4,7 @@ const fs = require('fs');
 
 const productImagesStorage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/product-images/');
+        cb(null, 'public/uploads/product-images/');
     },
     filename: function (req, file, cb) {
         cb(null, `${Date.now()}-${file.originalname}`);
@@ -13,7 +13,7 @@ const productImagesStorage = multer.diskStorage({
 
 const userImagesStorage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/user-images/');
+        cb(null, 'public/uploads/user-images/');
     },
     filename: function (req, file, cb) {
         cb(null, `${Date.now()}-${file.originalname}`);

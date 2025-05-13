@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/product.controller');
 const { uploadProductImages } = require('../middleware/upload.middleware');
+const auth = require('../middleware/auth.middleware');
 
 /**
  * @swagger
@@ -14,9 +15,42 @@ const { uploadProductImages } = require('../middleware/upload.middleware');
  * @swagger
  * components:
  *   schemas:
+ * 
+ *     Review:
+ *       type: object
+ *       required:
+ *         - user
+ *         - title
+ *         - rating
+ *         - comment
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Unique identifier
+ *         user:
+ *           type: string
+ *           example: "6618b8f933b7a84cda74df01"
+ *         title:
+ *           type: string
+ *           example: "Great Product"
+ *         rating:
+ *           type: number
+ *           format: float
+ *           example: 4.5
+ *         comment:
+ *           type: string
+ *           example: "Loved using this every day!"
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ * 
  *     Product:
  *       type: object
  *       required:
+ *         - seller
  *         - name
  *         - image
  *         - description
@@ -27,37 +61,58 @@ const { uploadProductImages } = require('../middleware/upload.middleware');
  *       properties:
  *         _id:
  *           type: string
+ *           description: Unique identifier
+ *         seller:
+ *           type: string
+ *           description: Seller unique identifier
  *         name:
  *           type: string
+ *           description: Product name
  *         image:
  *           type: string
  *           format: uri
+ *           description: Image URL
  *         description:
  *           type: string
+ *           description: Product description
  *         brand:
  *           type: string
+ *           description: Product brand
  *         category:
  *           type: string
  *           enum: [trading-card]
+ *           description: Product category
  *         price:
  *           type: number
+ *           description: Product price
  *         quantity:
  *           type: integer
+ *           description: Available quantity
+ *         reviews:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Review'
+ *           description: Array of product reviews
  *         rating:
  *           type: number
  *           minimum: 0
  *           maximum: 5
+ *           description: Average rating
  *         reviewCount:
  *           type: integer
+ *           description: Number of reviews
  *         condition:
  *           type: string
  *           enum: [new, used]
+ *           description: Product condition
  *         createdAt:
  *           type: string
  *           format: date-time
+ *           description: Creation timestamp
  *         updatedAt:
  *           type: string
  *           format: date-time
+ *           description: Last update timestamp
  */
 
 /**
@@ -71,32 +126,61 @@ const { uploadProductImages } = require('../middleware/upload.middleware');
  *         name: page
  *         schema:
  *           type: integer
- *           default: 1
+ *         description: Page number for pagination
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *           default: 10
+ *         description: Number of products per page
+ *       - in: query
+ *         name: seller
+ *         schema:
+ *           type: string
+ *         description: Filter by seller id
+ *       - in: query
+ *         name: name
+ *         schema:
+ *           type: string
+ *         description: Filter by product name (partial match)
  *       - in: query
  *         name: brand
  *         schema:
  *           type: string
+ *         description: Filter by product brand
  *       - in: query
  *         name: category
  *         schema:
  *           type: string
- *       - in: query
- *         name: rating
- *         schema:
- *           type: number
+ *         description: Filter by category (e.g., trading-card)
  *       - in: query
  *         name: condition
  *         schema:
  *           type: string
  *           enum: [new, used]
+ *         description: Filter by condition
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: Minimum price filter
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: Maximum price filter
+ *       - in: query
+ *         name: minRating
+ *         schema:
+ *           type: number
+ *         description: Minimum rating filter
+ *       - in: query
+ *         name: maxRating
+ *         schema:
+ *           type: number
+ *         description: Maximum rating filter
  *     responses:
  *       200:
- *         description: List of products
+ *         description: A list of products
  *         content:
  *           application/json:
  *             schema:
@@ -114,6 +198,8 @@ const { uploadProductImages } = require('../middleware/upload.middleware');
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Product'
+ *       500:
+ *         description: Server error
  */
 router.get('/', productController.getProducts);
 
@@ -139,6 +225,8 @@ router.get('/', productController.getProducts);
  *               $ref: '#/components/schemas/Product'
  *       404:
  *         description: Product not found
+ *       500:
+ *         description: Server error
  */
 router.get('/:id', productController.getProductById);
 
@@ -182,9 +270,6 @@ router.get('/:id', productController.getProductById);
  *               condition:
  *                 type: string
  *                 enum: [new, used]
- *           encoding:
- *             image:
- *               contentType: image/png, image/jpeg
  *     responses:
  *       201:
  *         description: Product created successfully
@@ -194,8 +279,10 @@ router.get('/:id', productController.getProductById);
  *               $ref: '#/components/schemas/Product'
  *       400:
  *         description: Invalid input
+ *       500:
+ *         description: Server error
  */
-router.post('/', uploadProductImages.single('image'), productController.createProduct);
+router.post('/', auth.authUser, uploadProductImages.single('image'), productController.createProduct);
 
 /**
  * @swagger
@@ -239,9 +326,6 @@ router.post('/', uploadProductImages.single('image'), productController.createPr
  *               condition:
  *                 type: string
  *                 enum: [new, used]
- *           encoding:
- *             image:
- *               contentType: image/png, image/jpeg
  *     responses:
  *       200:
  *         description: Product updated successfully
@@ -249,8 +333,10 @@ router.post('/', uploadProductImages.single('image'), productController.createPr
  *         description: Invalid input
  *       404:
  *         description: Product not found
+ *       500:
+ *         description: Server error
  */
-router.patch('/:id', uploadProductImages.single('image'), productController.patchProduct);
+router.patch('/:id', auth.authUser, uploadProductImages.single('image'), productController.patchProduct);
 
 /**
  * @swagger
@@ -270,7 +356,9 @@ router.patch('/:id', uploadProductImages.single('image'), productController.patc
  *         description: Product deleted successfully
  *       404:
  *         description: Product not found
+ *       500:
+ *         description: Server error
  */
-router.delete('/:id', productController.deleteProduct);
+router.delete('/:id', auth.authUser, productController.deleteProduct);
 
 module.exports = router;

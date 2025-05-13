@@ -7,6 +7,7 @@ require('./startup/logging')(app);
 require('./startup/validation')();
 require('./startup/db')();
 require('./startup/routes')(app);
+require('./startup/middleware')(app);
 require('./startup/swagger')(app);
 
 const port = process.env.BACKEND_PORT || 5001;

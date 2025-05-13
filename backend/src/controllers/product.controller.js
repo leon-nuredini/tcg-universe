@@ -6,41 +6,59 @@ const { productLogger } = require('../middleware/logger.middleware');
 const { deleteImage } = require('../utils/file.utils');
 const { handleImageUpdate } = require('../utils/product.utils');
 
-exports.getProducts = async (req, res) => {
+exports.getProducts = async (req, res, next) => {
+    req.logger = productLogger;
+
     const page = _.clamp(parseInt(req.query.page), 1, Number.MAX_SAFE_INTEGER);
     const limit = _.clamp(parseInt(req.query.limit), 1, Number.MAX_SAFE_INTEGER);
     const docsToSkip = (page - 1) * limit;
 
-    const { brand, category, rating, condition} = req.query;
+    const { seller, name, brand, category, condition, minPrice, maxPrice, minRating, maxRating } = req.query;
     const filter = {};
+    if (seller) filter.seller = seller;
+    if (name) filter.name = { $regex: name, $options: 'i' };
     if (brand) filter.brand = brand;
     if (category) filter.category = category;
-    if (rating) filter.rating = rating;
     if (condition) filter.condition = condition;
+
+    if (minPrice || maxPrice) {
+        filter.price = {};
+        if (minPrice) filter.price.$gte = parseFloat(minPrice);
+        if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
+    }
+    
+    if (minRating || maxRating) {
+        filter.rating = filter.rating || {};
+        if (minRating) filter.rating.$gte = parseFloat(minRating);
+        if (maxRating) filter.rating.$lte = parseFloat(maxRating);
+    }
 
     try {
         const products = await Product.find(filter).sort({ createdAt: -1 }).skip(docsToSkip).limit(limit).lean();
-        const totalProducts = await Product.countDocuments();
-        const totalPages = Math.ceil(totalProducts / limit)
+        const totalProducts = await Product.countDocuments(filter);
+        const totalPages = Math.ceil(totalProducts / limit);
         res.json({ page, limit, totalPages, totalProducts, products });
     } catch (error) {
-        productLogger.error(`Error fetching all products: ${error.message}`);
+        next(error);
     }
 }
 
-exports.getProductById = async (req, res) => {
+exports.getProductById = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid product ID' });
+    req.logger = productLogger;
     try {
-        const product = await Product.findById(req.params.id);
+        const product = await Product.findById(req.params.id).lean();
         if (!product) return res.status(404).json({ error: 'Product not found' });
         res.json(product);
     } catch (error) {
-        productLogger.error(`Error fetching the product: ${error.message}`);
+        next(error);
     }
 }
 
-exports.createProduct = async (req, res) => {
+exports.createProduct = async (req, res, next) => {
+    req.logger = productLogger;
     let imagePath = req.file ? req.file.path : null;
+    if (imagePath) imagePath = imagePath.replace('public\\', '');
     req.body.image = imagePath;
     const { error } = productValidators.validateProduct(req.body);
     if (error) {
@@ -53,15 +71,18 @@ exports.createProduct = async (req, res) => {
         const result = await product.save();
         res.status(201).json(result);
     } catch (error) {
-        productLogger.error(`Error creating the product: ${error.message}`);
-        res.status(500).json({ error: `Error creating the product: ${error.message}` });
+        next(error);
     }
 }
 
-exports.patchProduct = async (req, res) => {
+exports.patchProduct = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid product ID' });
+    req.logger = productLogger;
     let imagePath = req.file ? req.file.path : null;
-    if (imagePath) req.body.image = imagePath;
+    if (imagePath) {
+        imagePath = imagePath.replace('public\\', '');
+        req.body.image = imagePath;
+    }
     const allowedUpdates = ['name', 'image', 'description', 'brand', 'category', 'price', 'quantity', 'rating', 'reviewCount', 'condition'];
     const updates = Object.keys(req.body);
     const isValidOperation = updates.every(field => allowedUpdates.includes(field));
@@ -76,34 +97,34 @@ exports.patchProduct = async (req, res) => {
         return res.status(400).json({ error: error.details[0].message });
     }
 
-    let product = await Product.findById(req.params.id);
-    if (!product) {
-        await deleteImage(imagePath);
-        return res.status(404).json({ error: 'Product not found' });
-    }
-
-    imagePath = await handleImageUpdate(imagePath, product.image);
-    updates.forEach(field => { product[field] = req.body[field] });
-    if (imagePath) product.image = imagePath;
-    product.updatedAt = new Date();
     try {
+        let product = await Product.findById(req.params.id);
+        if (!product) {
+            await deleteImage(imagePath);
+            return res.status(404).json({ error: 'Product not found' });
+        }
+
+        imagePath = await handleImageUpdate(imagePath, product.image);
+        updates.forEach(field => { product[field] = req.body[field] });
+        if (imagePath) product.image = imagePath;
+        product.updatedAt = new Date();
+
         await product.save();
         res.json(product);
     } catch (error) {
-        productLogger.error(`Error patching product: ${error.message}`);
-        return res.status(500).json({ error: `Error patching product: ${error.message}` });
+        next(error);
     }
 }
 
-exports.deleteProduct = async (req, res) => {
+exports.deleteProduct = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid product ID' });
+    req.logger = productLogger;
     try {
         const result = await Product.findByIdAndDelete(req.params.id);
         if (!result) return res.status(404).json({ error: 'Product not found' });
         await deleteImage(result.image);
         res.json(result);
     } catch (error) {
-        productLogger.error(`Error deleting the product: ${error.message}`);
-        res.json({ error: `Error deleting the product: ${error.message}` });
+        next(error);
     }
 }

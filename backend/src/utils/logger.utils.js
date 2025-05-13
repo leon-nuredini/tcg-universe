@@ -26,7 +26,7 @@ function createLogger(name, fileNamePrefix) {
 function createDailyFileRotation(level, name, fileNamePrefix){
     return new DailyRotateFile({
         level: level,
-        dirname: `logs/${name.toLowerCase()}/${level}`,
+        dirname: `./logs/${name.toLowerCase()}/${level}`,
         filename: `${fileNamePrefix}-${level}-%DATE%`,
         extension: '.log',
         datePattern: 'DD-MM-YYYY',

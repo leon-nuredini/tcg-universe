@@ -26,4 +26,11 @@ yarn-debug.log*
 yarn-error.log*
 
 /backend/logs
+/backend/uploads
+/uploads
+/public/uploads
 
+/backend/public/uploads
+/frontend/public/images/Magic The Gathering
+/frontend/public/images/Pokemon
+/frontend/public/images/Yu Gi Oh
