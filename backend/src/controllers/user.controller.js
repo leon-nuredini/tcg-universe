@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const { User } = require('../models/user.model');
 const userValidators = require('../validators/user.validators');
 const _ = require('lodash');
@@ -34,7 +33,6 @@ exports.getUsers = async (req, res, next) => {
 }
 
 exports.getUserById = async (req, res, next) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid user ID' });
     req.logger = userLogger;
     try {
         const user = await User.findById(req.params.id).lean();
@@ -62,7 +60,6 @@ exports.createUser = async (req, res, next) => {
 }
 
 exports.patchUser = async (req, res, next) => {
-    if (!mongoose.Types.ObjectId.isValid(req.user._id)) return res.status(400).json({ error: 'Invalid user ID' });
     req.logger = userLogger;
     const allowedUpdates = ['name', 'email', 'password', 'accountStatus'];
     const updates = Object.keys(req.body);
@@ -91,7 +88,6 @@ exports.patchUser = async (req, res, next) => {
 }
 
 exports.patchUserByAdmin = async (req, res, next) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid user ID' });
     req.logger = userLogger;
 
     const allowedUpdates = ['name', 'email', 'password', 'role', 'accountStatus'];
@@ -118,7 +114,6 @@ exports.patchUserByAdmin = async (req, res, next) => {
 }
 
 exports.deleteUser = async (req, res, next) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid user ID' });
     req.logger = userLogger;
     try {
         const result = await User.findByIdAndDelete(req.params.id);

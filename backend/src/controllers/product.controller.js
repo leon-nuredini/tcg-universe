@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const { Product } = require('../models/product.model');
 const productValidators = require('../validators/product.validators');
 const _ = require('lodash');
@@ -44,7 +43,6 @@ exports.getProducts = async (req, res, next) => {
 }
 
 exports.getProductById = async (req, res, next) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid product ID' });
     req.logger = productLogger;
     try {
         const product = await Product.findById(req.params.id).lean();
@@ -76,7 +74,6 @@ exports.createProduct = async (req, res, next) => {
 }
 
 exports.patchProduct = async (req, res, next) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid product ID' });
     req.logger = productLogger;
     let imagePath = req.file ? req.file.path : null;
     if (imagePath) {
@@ -117,7 +114,6 @@ exports.patchProduct = async (req, res, next) => {
 }
 
 exports.deleteProduct = async (req, res, next) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid product ID' });
     req.logger = productLogger;
     try {
         const result = await Product.findByIdAndDelete(req.params.id);

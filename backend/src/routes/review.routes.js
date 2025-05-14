@@ -48,11 +48,16 @@ const auth = require('../middleware/auth.middleware');
 
 /**
  * @swagger
- * api/reviews:
+ * /api/reviews/{productId}:
  *   get:
  *     summary: Get all reviews (with filters and pagination)
  *     tags: [Reviews]
  *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
  *       - in: query
  *         name: user
  *         schema:
@@ -111,36 +116,11 @@ const auth = require('../middleware/auth.middleware');
  *                   items:
  *                     $ref: '#/components/schemas/Review'
  */
-router.get('/', reviewController.getReviews);
+router.get('/:productId', reviewController.getProductReviews);
 
 /**
  * @swagger
- * api/reviews/{id}:
- *   get:
- *     summary: Get a review by ID
- *     tags: [Reviews]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Review ID
- *     responses:
- *       200:
- *         description: The review
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Review'
- *       404:
- *         description: Review not found
- */
-router.get('/:id', reviewController.getReviewById);
-
-/**
- * @swagger
- * api/reviews:
+ * /api/reviews:
  *   post:
  *     summary: Create a new review
  *     tags: [Reviews]
@@ -152,14 +132,11 @@ router.get('/:id', reviewController.getReviewById);
  *             type: object
  *             required:
  *               - productId
- *               - user
  *               - title
  *               - rating
  *               - comment
  *             properties:
  *               productId:
- *                 type: string
- *               user:
  *                 type: string
  *               title:
  *                 type: string
@@ -181,13 +158,18 @@ router.post('/', auth.authUser, reviewController.createReview);
 
 /**
  * @swagger
- * api/reviews/{id}:
+ * /api/reviews/{reviewId}/product/{productId}:
  *   patch:
  *     summary: Update a review
  *     tags: [Reviews]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: reviewId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: productId
  *         required: true
  *         schema:
  *           type: string
@@ -216,17 +198,22 @@ router.post('/', auth.authUser, reviewController.createReview);
  *       404:
  *         description: Review not found
  */
-router.patch('/:id', auth.authUser, reviewController.patchReview);
+router.patch('/:reviewId/product/:productId', auth.authUser, reviewController.patchReview);
 
 /**
  * @swagger
- * api/reviews/{id}:
+ * /api/reviews/{reviewId}/product/{productId}:
  *   delete:
  *     summary: Delete a review
  *     tags: [Reviews]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: reviewId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: productId
  *         required: true
  *         schema:
  *           type: string
@@ -236,6 +223,6 @@ router.patch('/:id', auth.authUser, reviewController.patchReview);
  *       404:
  *         description: Review not found
  */
-router.delete('/:id', auth.authUser, reviewController.deleteReview);
+router.delete('/:reviewId/product/:productId', auth.authUser, reviewController.deleteReview);
 
 module.exports = router;
