@@ -1,5 +1,5 @@
 const winston = require('winston');
-const error = require('../middleware/error.middleware');
+const { notFound, errorHandler } = require('../middleware/error.middleware');
 
 module.exports = function(app) {
     winston.exceptions.handle(
@@ -7,5 +7,6 @@ module.exports = function(app) {
         new winston.transports.File({ filename: 'logs/uncaughtExceptions.log' })
     );
 
-    app.use(error);
+    app.use(notFound);
+    app.use(errorHandler);
 }
