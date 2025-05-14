@@ -29,30 +29,26 @@ exports.getProductReviews = async (req, res, next) => {
         if (toDate) filter.createdAt.$lte = new Date(toDate);
     }
 
-    try {
-        const product = await Product.findById(productId).lean();
-        if (!product) return res.status(404).json({ error: 'Product not found' });
-        
-        let filteredReviews = product.reviews || [];
-        
-        filteredReviews = _.filter(filteredReviews, (review) => {
-            const userMatch = user ? new RegExp(user, 'i').test(review.user.toString()) : true;
-            const minRatingMatch = minRating ? review.rating >= parseFloat(minRating) : true;
-            const maxRatingMatch = maxRating ? review.rating <= parseFloat(maxRating) : true;
-            const fromDateMatch = fromDate ? new Date(review.createdAt) >= new Date(fromDate) : true;
-            const toDateMatch = toDate ? new Date(review.createdAt) <= new Date(toDate) : true;
-        
-            return userMatch && minRatingMatch && maxRatingMatch && fromDateMatch && toDateMatch;
-        });
+    const product = await Product.findById(productId).lean();
+    if (!product) return res.status(404).json({ error: 'Product not found' });
 
-        const total = filteredReviews.length;
-        filteredReviews = _.orderBy(filteredReviews, ['createdAt'], ['desc']);
-        const paginatedReviews = _.slice(filteredReviews, docsToSkip, docsToSkip + limit);
+    let filteredReviews = product.reviews || [];
 
-        res.status(200).json({ total, page, limit, totalPages: Math.ceil(total / limit), rating: product.rating, reviews: paginatedReviews });
-    } catch (error) {
-        next(error);
-    }
+    filteredReviews = _.filter(filteredReviews, (review) => {
+        const userMatch = user ? new RegExp(user, 'i').test(review.user.toString()) : true;
+        const minRatingMatch = minRating ? review.rating >= parseFloat(minRating) : true;
+        const maxRatingMatch = maxRating ? review.rating <= parseFloat(maxRating) : true;
+        const fromDateMatch = fromDate ? new Date(review.createdAt) >= new Date(fromDate) : true;
+        const toDateMatch = toDate ? new Date(review.createdAt) <= new Date(toDate) : true;
+
+        return userMatch && minRatingMatch && maxRatingMatch && fromDateMatch && toDateMatch;
+    });
+
+    const total = filteredReviews.length;
+    filteredReviews = _.orderBy(filteredReviews, ['createdAt'], ['desc']);
+    const paginatedReviews = _.slice(filteredReviews, docsToSkip, docsToSkip + limit);
+
+    res.status(200).json({ total, page, limit, totalPages: Math.ceil(total / limit), rating: product.rating, reviews: paginatedReviews });
 }
 
 exports.createReview = async (req, res, next) => {
@@ -67,7 +63,7 @@ exports.createReview = async (req, res, next) => {
 
         const existingReview = product.reviews.find((r) => r.user.toString() == req.user._id.toString())
         if (existingReview) return res.status(400).json({ error: 'You have already submitted a review for this product' });
-        
+
         const newReview = { ...req.body, user: req.user._id };
         product.reviews.push(newReview);
 

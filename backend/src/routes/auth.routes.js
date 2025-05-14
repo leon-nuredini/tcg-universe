@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
 const auth = require('../middleware/auth.middleware');
+const asyncHandler = require('../middleware/asyncHandler.middleware');
 
 /**
  * @swagger
@@ -52,7 +53,7 @@ const auth = require('../middleware/auth.middleware');
  *                       description: Remember user?
  *                       example: false
 */
-router.post('/', authController.authenticate);
+router.post('/', asyncHandler(authController.authenticate));
 
 /**
  * @swagger
@@ -101,7 +102,7 @@ router.post('/', authController.authenticate);
  *                   type: string
  *                   example: Invalid or expired refresh token.
  */
-router.post('/refresh', authController.refreshToken);
+router.post('/refresh', asyncHandler(authController.refreshToken));
 
 /**
  * @swagger
@@ -122,6 +123,6 @@ router.post('/refresh', authController.refreshToken);
  *                   type: string
  *                   example: Logged out successfully.
  */
-router.post('/logout', auth.authUser, authController.logout);
+router.post('/logout', auth.authUser, asyncHandler(authController.logout));
 
 module.exports = router;

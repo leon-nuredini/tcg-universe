@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const reviewController = require('../controllers/review.controller');
 const auth = require('../middleware/auth.middleware');
+const asyncHandler = require('../middleware/asyncHandler.middleware');
 
 /**
  * @swagger
@@ -116,7 +117,7 @@ const auth = require('../middleware/auth.middleware');
  *                   items:
  *                     $ref: '#/components/schemas/Review'
  */
-router.get('/:productId', reviewController.getProductReviews);
+router.get('/:productId', asyncHandler(reviewController.getProductReviews));
 
 /**
  * @swagger
@@ -154,7 +155,7 @@ router.get('/:productId', reviewController.getProductReviews);
  *       400:
  *         description: Validation error
  */
-router.post('/', auth.authUser, reviewController.createReview);
+router.post('/', auth.authUser, asyncHandler(reviewController.createReview));
 
 /**
  * @swagger
@@ -198,7 +199,7 @@ router.post('/', auth.authUser, reviewController.createReview);
  *       404:
  *         description: Review not found
  */
-router.patch('/:reviewId/product/:productId', auth.authUser, reviewController.patchReview);
+router.patch('/:reviewId/product/:productId', auth.authUser, asyncHandler(reviewController.patchReview));
 
 /**
  * @swagger
@@ -223,6 +224,6 @@ router.patch('/:reviewId/product/:productId', auth.authUser, reviewController.pa
  *       404:
  *         description: Review not found
  */
-router.delete('/:reviewId/product/:productId', auth.authUser, reviewController.deleteReview);
+router.delete('/:reviewId/product/:productId', auth.authUser, asyncHandler(reviewController.deleteReview));
 
 module.exports = router;

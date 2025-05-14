@@ -25,32 +25,24 @@ exports.getProducts = async (req, res, next) => {
         if (minPrice) filter.price.$gte = parseFloat(minPrice);
         if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
     }
-    
+
     if (minRating || maxRating) {
         filter.rating = filter.rating || {};
         if (minRating) filter.rating.$gte = parseFloat(minRating);
         if (maxRating) filter.rating.$lte = parseFloat(maxRating);
     }
 
-    try {
-        const products = await Product.find(filter).sort({ createdAt: -1 }).skip(docsToSkip).limit(limit).lean();
-        const totalProducts = await Product.countDocuments(filter);
-        const totalPages = Math.ceil(totalProducts / limit);
-        res.json({ page, limit, totalPages, totalProducts, products });
-    } catch (error) {
-        next(error);
-    }
+    const products = await Product.find(filter).sort({ createdAt: -1 }).skip(docsToSkip).limit(limit).lean();
+    const totalProducts = await Product.countDocuments(filter);
+    const totalPages = Math.ceil(totalProducts / limit);
+    res.json({ page, limit, totalPages, totalProducts, products });
 }
 
 exports.getProductById = async (req, res, next) => {
     req.logger = productLogger;
-    try {
-        const product = await Product.findById(req.params.id).lean();
-        if (!product) return res.status(404).json({ error: 'Product not found' });
-        res.json(product);
-    } catch (error) {
-        next(error);
-    }
+    const product = await Product.findById(req.params.id).lean();
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    res.json(product);
 }
 
 exports.createProduct = async (req, res, next) => {
@@ -64,13 +56,9 @@ exports.createProduct = async (req, res, next) => {
         return res.status(400).json({ error: error.details[0].message });
     }
 
-    try {
-        const product = new Product(req.body);
-        const result = await product.save();
-        res.status(201).json(result);
-    } catch (error) {
-        next(error);
-    }
+    const product = new Product(req.body);
+    const result = await product.save();
+    res.status(201).json(result);
 }
 
 exports.patchProduct = async (req, res, next) => {
@@ -85,7 +73,7 @@ exports.patchProduct = async (req, res, next) => {
     const isValidOperation = updates.every(field => allowedUpdates.includes(field));
     if (!isValidOperation) {
         await deleteImage(imagePath);
-        return res.status(400).json({ error: 'Invalid updates!' });   
+        return res.status(400).json({ error: 'Invalid updates!' });
     }
 
     const { error } = productValidators.validateProductForPatching(req.body);
@@ -94,33 +82,25 @@ exports.patchProduct = async (req, res, next) => {
         return res.status(400).json({ error: error.details[0].message });
     }
 
-    try {
-        let product = await Product.findById(req.params.id);
-        if (!product) {
-            await deleteImage(imagePath);
-            return res.status(404).json({ error: 'Product not found' });
-        }
-
-        imagePath = await handleImageUpdate(imagePath, product.image);
-        updates.forEach(field => { product[field] = req.body[field] });
-        if (imagePath) product.image = imagePath;
-        product.updatedAt = new Date();
-
-        await product.save();
-        res.json(product);
-    } catch (error) {
-        next(error);
+    let product = await Product.findById(req.params.id);
+    if (!product) {
+        await deleteImage(imagePath);
+        return res.status(404).json({ error: 'Product not found' });
     }
+
+    imagePath = await handleImageUpdate(imagePath, product.image);
+    updates.forEach(field => { product[field] = req.body[field] });
+    if (imagePath) product.image = imagePath;
+    product.updatedAt = new Date();
+
+    await product.save();
+    res.json(product);
 }
 
 exports.deleteProduct = async (req, res, next) => {
     req.logger = productLogger;
-    try {
-        const result = await Product.findByIdAndDelete(req.params.id);
-        if (!result) return res.status(404).json({ error: 'Product not found' });
-        await deleteImage(result.image);
-        res.json(result);
-    } catch (error) {
-        next(error);
-    }
+    const result = await Product.findByIdAndDelete(req.params.id);
+    if (!result) return res.status(404).json({ error: 'Product not found' });
+    await deleteImage(result.image);
+    res.json(result);
 }

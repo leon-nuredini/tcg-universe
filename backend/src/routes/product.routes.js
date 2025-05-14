@@ -3,6 +3,7 @@ const router = express.Router();
 const productController = require('../controllers/product.controller');
 const { uploadProductImages } = require('../middleware/upload.middleware');
 const auth = require('../middleware/auth.middleware');
+const asyncHandler = require('../middleware/asyncHandler.middleware');
 
 /**
  * @swagger
@@ -201,7 +202,7 @@ const auth = require('../middleware/auth.middleware');
  *       500:
  *         description: Server error
  */
-router.get('/', productController.getProducts);
+router.get('/', asyncHandler(productController.getProducts));
 
 /**
  * @swagger
@@ -228,7 +229,7 @@ router.get('/', productController.getProducts);
  *       500:
  *         description: Server error
  */
-router.get('/:id', productController.getProductById);
+router.get('/:id', asyncHandler(productController.getProductById));
 
 /**
  * @swagger
@@ -282,7 +283,7 @@ router.get('/:id', productController.getProductById);
  *       500:
  *         description: Server error
  */
-router.post('/', auth.authUser, uploadProductImages.single('image'), productController.createProduct);
+router.post('/', auth.authUser, uploadProductImages.single('image'), asyncHandler(productController.createProduct));
 
 /**
  * @swagger
@@ -336,7 +337,7 @@ router.post('/', auth.authUser, uploadProductImages.single('image'), productCont
  *       500:
  *         description: Server error
  */
-router.patch('/:id', auth.authUser, uploadProductImages.single('image'), productController.patchProduct);
+router.patch('/:id', auth.authUser, uploadProductImages.single('image'), asyncHandler(productController.patchProduct));
 
 /**
  * @swagger
@@ -359,6 +360,6 @@ router.patch('/:id', auth.authUser, uploadProductImages.single('image'), product
  *       500:
  *         description: Server error
  */
-router.delete('/:id', auth.authUser, productController.deleteProduct);
+router.delete('/:id', auth.authUser, asyncHandler(productController.deleteProduct));
 
 module.exports = router;

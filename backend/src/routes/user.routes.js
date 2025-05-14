@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
 const auth = require('../middleware/auth.middleware');
+const asyncHandler = require('../middleware/asyncHandler.middleware');
 
 /**
  * @swagger
@@ -113,7 +114,7 @@ const auth = require('../middleware/auth.middleware');
  *       200:
  *         description: List of users
  */
-router.get('/', userController.getUsers);
+router.get('/', asyncHandler(userController.getUsers));
 
 /**
  * @swagger
@@ -133,7 +134,7 @@ router.get('/', userController.getUsers);
  *       404:
  *         description: User not found
  */
-router.get('/:id', userController.getUserById);
+router.get('/:id', asyncHandler(userController.getUserById));
 
 /**
  * @swagger
@@ -151,7 +152,7 @@ router.get('/:id', userController.getUserById);
  *       201:
  *         description: User created
  */
-router.post('/', userController.createUser);
+router.post('/', asyncHandler(userController.createUser));
 
 /**
  * @swagger
@@ -168,7 +169,7 @@ router.post('/', userController.createUser);
  *       200:
  *         description: User updated
  */
-router.patch('/:id', auth.authUser, userController.patchUser);
+router.patch('/:id', auth.authUser, asyncHandler(userController.patchUser));
 
 /**
  * @swagger
@@ -191,7 +192,7 @@ router.patch('/:id', auth.authUser, userController.patchUser);
  *       200:
  *         description: User updated by admin
  */
-router.patch('/admin/:id', auth.authUser, auth.requireAdmin, userController.patchUserByAdmin);
+router.patch('/admin/:id', auth.authUser, auth.requireAdmin, asyncHandler(userController.patchUserByAdmin));
 
 /**
  * @swagger
@@ -209,6 +210,6 @@ router.patch('/admin/:id', auth.authUser, auth.requireAdmin, userController.patc
  *       200:
  *         description: User deleted
  */
-router.delete('/:id', auth.authUser, auth.requireAdmin, userController.deleteUser);
+router.delete('/:id', auth.authUser, auth.requireAdmin, asyncHandler(userController.deleteUser));
 
 module.exports = router;

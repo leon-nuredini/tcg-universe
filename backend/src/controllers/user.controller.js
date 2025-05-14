@@ -21,26 +21,17 @@ exports.getUsers = async (req, res, next) => {
     if (email) filter.email = { $regex: email, $options: 'i' };
     if (role) filter.role = role;
     if (accountStatus) filter.accountStatus = accountStatus;
-
-    try {
-        const users = await User.find(filter).sort({ createdAt: -1 }).skip(docsToSkip).limit(limit).lean();
-        const totalUsers = await User.countDocuments(filter);
-        const totalPages = Math.ceil(totalUsers / limit);
-        res.json({ page, limit, totalPages, totalUsers, users });
-    } catch (error) {
-        next(error);
-    }
+    const users = await User.find(filter).sort({ createdAt: -1 }).skip(docsToSkip).limit(limit).lean();
+    const totalUsers = await User.countDocuments(filter);
+    const totalPages = Math.ceil(totalUsers / limit);
+    res.json({ page, limit, totalPages, totalUsers, users });
 }
 
 exports.getUserById = async (req, res, next) => {
     req.logger = userLogger;
-    try {
-        const user = await User.findById(req.params.id).lean();
-        if (!user) return res.status(404).json({ error: 'User not found' });
-        res.json(user);
-    } catch (error) {
-        next(error);
-    }
+    const user = await User.findById(req.params.id).lean();
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
 }
 
 exports.createUser = async (req, res, next) => {
@@ -48,15 +39,11 @@ exports.createUser = async (req, res, next) => {
     const { error } = userValidators.validateUser(req.body);
     if (error) return res.status(400).json({ error: error.details[0].message });
 
-    try {
-        const hashedPassword = await bcrypt.hash(req.body.password, await genSalt());
-        const user = new User({ ...req.body, password: hashedPassword, role: 'user', accountStatus: 'active' });
-        let result = await user.save();
-        result = _.omit(result.toObject(), ['password']);
-        res.status(201).json(result);
-    } catch (error) {
-        next(error);
-    }
+    const hashedPassword = await bcrypt.hash(req.body.password, await genSalt());
+    const user = new User({ ...req.body, password: hashedPassword, role: 'user', accountStatus: 'active' });
+    let result = await user.save();
+    result = _.omit(result.toObject(), ['password']);
+    res.status(201).json(result);
 }
 
 exports.patchUser = async (req, res, next) => {
@@ -69,22 +56,18 @@ exports.patchUser = async (req, res, next) => {
     const { error } = userValidators.validatePatchUser(req.body);
     if (error) return res.status(400).json({ error: error.details[0].message });
 
-    try {
-        let user = await User.findById(req.user._id);
-        if (!user) return res.status(404).json({ error: 'User not found' });
-        updates.forEach(field => { 
-            user[field] = req.body[field]
-         });
-        if (req.body.password) {
-            user.password = await bcrypt.hash(req.body.password, await genSalt());
-            user.tokenVersion += 1;
-        }
-        await user.save();
-        const safeUser = _.omit(user.toObject(), ['password']);
-        res.json(safeUser);
-    } catch (error) {
-        next(error);
+    let user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    updates.forEach(field => {
+        user[field] = req.body[field]
+    });
+    if (req.body.password) {
+        user.password = await bcrypt.hash(req.body.password, await genSalt());
+        user.tokenVersion += 1;
     }
+    await user.save();
+    const safeUser = _.omit(user.toObject(), ['password']);
+    res.json(safeUser);
 }
 
 exports.patchUserByAdmin = async (req, res, next) => {
@@ -97,30 +80,21 @@ exports.patchUserByAdmin = async (req, res, next) => {
 
     const { error } = userValidators.validatePatchUserByAdmin(req.body);
     if (error) return res.status(400).json({ error: error.details[0].message });
+    let user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-    try {
-        let user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ error: 'User not found' });
-
-        Object.keys(req.body).forEach(field => { user[field] = req.body[field]; });
-        if (req.body.password) user.password = await bcrypt.hash(req.body.password, await genSalt());
-        await user.save();
-        moderatorLogger.info(`User   ${user._id} patched by  ${req.params.id}.    Fields affected: ${Object.keys(req.body)}.  New values: ${JSON.stringify({ ...req.body, password: req.body.password ? user.password : '' })}`);
-        const safeUser = _.omit(user.toObject(), ['password']);
-        res.json(safeUser);
-    } catch (error) {
-        next(error);
-    }
+    Object.keys(req.body).forEach(field => { user[field] = req.body[field]; });
+    if (req.body.password) user.password = await bcrypt.hash(req.body.password, await genSalt());
+    await user.save();
+    moderatorLogger.info(`User   ${user._id} patched by  ${req.params.id}.    Fields affected: ${Object.keys(req.body)}.  New values: ${JSON.stringify({ ...req.body, password: req.body.password ? user.password : '' })}`);
+    const safeUser = _.omit(user.toObject(), ['password']);
+    res.json(safeUser);
 }
 
 exports.deleteUser = async (req, res, next) => {
     req.logger = userLogger;
-    try {
-        const result = await User.findByIdAndDelete(req.params.id);
-        if (!result) return res.status(404).json({ error: 'User not found' });
-        moderatorLogger.info(`User  ${result._id}   deleted by: ${req.user._id}`);
-        res.json(result);
-    } catch (error) {
-        next(error);
-    }
+    const result = await User.findByIdAndDelete(req.params.id);
+    if (!result) return res.status(404).json({ error: 'User not found' });
+    moderatorLogger.info(`User  ${result._id}   deleted by: ${req.user._id}`);
+    res.json(result);
 }
