@@ -9,13 +9,13 @@ module.exports = function(app){
     const limiter = rateLimit({
         windowMs: 15 * 60 * 1000,
         message: { error: "Too many requests. You can make up to 100 requests in 15 minutes. Please wait before trying again." },
-        max: 100,
+        max: 500,
         skipFailedRequests: true,
     });
 
     const speedLimiter = slowDown({
         windowMs: 15 * 60 * 1000,
-        delayAfter: 50,
+        delayAfter: 100,
         delayMs: (hits) => hits * 100
     });
 
