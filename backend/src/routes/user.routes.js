@@ -114,7 +114,7 @@ const asyncHandler = require('../middleware/asyncHandler.middleware');
  *       200:
  *         description: List of users
  */
-router.get('/', asyncHandler(userController.getUsers));
+router.get('/', auth.authUser, auth.requireAdmin, asyncHandler(userController.getUsers));
 
 /**
  * @swagger
@@ -134,7 +134,21 @@ router.get('/', asyncHandler(userController.getUsers));
  *       404:
  *         description: User not found
  */
-router.get('/:id', asyncHandler(userController.getUserById));
+router.get('/:id', auth.authUser, auth.requireAdmin, asyncHandler(userController.getUserById));
+
+/**
+ * @swagger
+ * /api/users/profile/user:
+ *   get:
+ *     summary: Get logged in user profile
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: User found
+ *       404:
+ *         description: User not found
+ */
+router.get('/profile/user', auth.authUser, asyncHandler(userController.getUserProfile));
 
 /**
  * @swagger
@@ -156,7 +170,7 @@ router.post('/', asyncHandler(userController.createUser));
 
 /**
  * @swagger
- * /api/users/{id}:
+ * /api/users/:
  *   patch:
  *     summary: Partially update a user (self-edit)
  *     tags: [Users]
@@ -169,7 +183,7 @@ router.post('/', asyncHandler(userController.createUser));
  *       200:
  *         description: User updated
  */
-router.patch('/:id', auth.authUser, asyncHandler(userController.patchUser));
+router.patch('/', auth.authUser, asyncHandler(userController.patchUser));
 
 /**
  * @swagger

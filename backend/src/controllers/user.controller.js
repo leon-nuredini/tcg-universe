@@ -34,6 +34,13 @@ exports.getUserById = async (req, res, next) => {
     res.json(user);
 }
 
+exports.getUserProfile = async (req, res, next) => {
+    req.logger = userLogger;
+    const user = await User.findById(req.user._id).lean();
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+}
+
 exports.createUser = async (req, res, next) => {
     req.logger = userLogger;
     const { error } = userValidators.validateUser(req.body);
